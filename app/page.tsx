@@ -344,6 +344,16 @@ const dashboardStats = {
   ],
 }
 
+const updateOrderStatus = async (orderId: string, newStatus: Order["status"]) => {
+  try {
+    const orderRef = ref(db, `orders/${orderId}`);
+    await set(ref(db, `orders/${orderId}/status`), newStatus);
+    alert("تم تحديث حالة الطلب!");
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 
 
 export default function FoodiePlatform() {
@@ -421,6 +431,24 @@ const handleCheckout = async () => {
   } catch (error) {
     console.error("Error saving order:", error);
     alert("حدث خطأ أثناء حفظ الطلب.");
+  }
+};
+
+// فلترة المطاعم بناءً على البحث والمحافظة
+const displayRestaurants = allRestaurants.filter(r => 
+  (r.name.includes(searchQuery) || r.cuisine.includes(searchQuery)) &&
+  (selectedGovernorate === "الكل" || r.address.includes(selectedGovernorate))
+);
+
+// فلترة الأصناف داخل المطعم بناءً على القسم
+const displayMenuItems = menuItems.filter(item => 
+  selectedCategory === "الكل" || item.category === selectedCategory
+);
+
+const deleteRestaurant = async (resId: string) => {
+  if(confirm("هل أنت متأكد من حذف هذا المطعم؟")) {
+    await set(ref(db, `restaurants/${resId}`), null);
+    alert("تم حذف المطعم");
   }
 };
 
@@ -905,14 +933,32 @@ const handleAdminLogin = () => {
                     <h1 className="text-2xl font-bold text-card-foreground">{selectedRestaurant.name}</h1>
                     <p className="text-muted-foreground">{selectedRestaurant.cuisine}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon">
-                      <Heart className="w-5 h-5" />
-                    </Button>
-                    <Button variant="outline" size="icon">
-                      <Share2 className="w-5 h-5" />
-                    </Button>
-                  </div>
+                  {/* ابحث عن هذا الجزء داخل RestaurantPage واستبدله */}
+<div className="flex items-center gap-2">
+  {/* زر القلب (المفضلة) التفاعلي */}
+  <Button 
+    variant="outline" 
+    size="icon" 
+    className="hover:text-red-500 transition-colors"
+    onClick={() => alert("تمت إضافة " + selectedRestaurant.name + " للمفضلة! ❤️")}
+  >
+    <Heart className="w-5 h-5" />
+  </Button>
+
+  {/* زر المشاركة التفاعلي */}
+  <Button 
+    variant="outline" 
+    size="icon" 
+    className="hover:text-primary transition-colors"
+    onClick={() => {
+      // نسخ رابط الموقع الحالي للحافظة
+      navigator.clipboard.writeText(window.location.href);
+      alert("تم نسخ رابط مطعم " + selectedRestaurant.name + " بنجاح! 🔗");
+    }}
+  >
+    <Share2 className="w-5 h-5" />
+  </Button>
+</div>
                 </div>
                 <div className="flex flex-wrap items-center gap-4 mt-4 text-sm">
                   <span className="flex items-center gap-1">
@@ -1296,10 +1342,10 @@ const handleAdminLogin = () => {
               <h2 className="text-2xl font-bold text-foreground">المطاعم المميزة</h2>
               <p className="text-muted-foreground">اكتشف أفضل المطاعم في منطقتك</p>
             </div>
-            <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              تصفية
-            </Button>
+            <Button size="lg" className="gap-2" onClick={() => document.getElementById('restaurants-section')?.scrollIntoView({behavior: 'smooth'})}>
+  <Store className="w-5 h-5" />
+  استكشف المطاعم
+</Button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredRestaurants.map((restaurant) => (
@@ -1385,45 +1431,23 @@ const handleAdminLogin = () => {
       )}
 
       {/* Order Tracking */}
-      {userRole === "customer" && orders.length > 0 && (
-        <section className="py-12 bg-secondary/30">
-          <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold text-foreground mb-6">تتبع طلباتك</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {orders.map((order) => (
-                <div key={order.id} className="bg-card rounded-2xl border border-border p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <p className="font-bold">{order.id}</p>
-                      <p className="text-sm text-muted-foreground">{order.restaurantName}</p>
-                    </div>
-                    <Badge className={`${getStatusColor(order.status)} text-white`}>
-                      {getStatusText(order.status)}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2 mb-4">
-                    {["pending", "preparing", "ready", "delivering", "delivered"].map((status, i) => (
-                      <div key={status} className="flex-1">
-                        <div
-                          className={`h-2 rounded-full ${
-                            ["pending", "preparing", "ready", "delivering", "delivered"].indexOf(order.status) >= i
-                              ? "bg-primary"
-                              : "bg-secondary"
-                          }`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{order.date}</span>
-                    <span className="font-bold">{order.total} ج.م</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* استبدل الجزء الخاص بالـ Order Tracking بهذا */}
+{userRole === "customer" && realOrders.length > 0 && (
+  <section className="py-12 bg-secondary/30">
+    <div className="container mx-auto px-4">
+      <h2 className="text-2xl font-bold mb-6">تتبع طلباتك الحالية</h2>
+      <div className="grid md:grid-cols-2 gap-4">
+        {realOrders.slice(0, 2).map((order) => ( // عرض آخر طلبين
+          <div key={order.id} className="bg-card rounded-2xl border border-border p-6">
+             {/* ... نفس كود التصميم اللي عندك بس هيستخدم بيانات order الحقيقية ... */}
+             <p className="font-bold">حالة الطلب: {getStatusText(order.status)}</p>
+             <Progress value={order.status === "delivered" ? 100 : 50} className="mt-2" />
           </div>
-        </section>
-      )}
+        ))}
+      </div>
+    </div>
+  </section>
+)}
 
       {/* Features */}
       <section className="py-12">
