@@ -347,6 +347,7 @@ const dashboardStats = {
 
 
 export default function FoodiePlatform() {
+  const [showAddRestaurant, setShowAddRestaurant] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [loginData, setLoginData] = useState({ username: "", password: "" });
@@ -955,67 +956,77 @@ const handleAdminLogin = () => {
               <Settings className="w-5 h-5" />
             </Button>
             <Button
-              variant="ghost"
-              className="gap-2"
-              onClick={() => {
-                setActiveView("home")
-                setUserRole("customer")
-              }}
-            >
-              <LogOut className="w-4 h-4" />
-              خروج
-            </Button>
+  variant="ghost"
+  className="gap-2 text-destructive"
+  onClick={() => {
+    setIsAdminLoggedIn(false);
+    setActiveView("home");
+    setUserRole("customer");
+  }}
+>
+  <LogOut className="w-4 h-4" />
+  خروج من الإدارة
+</Button>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Package className="w-6 h-6 text-primary" />
-              </div>
-              <Badge className="bg-green-500/10 text-green-600 border-0">
-                +{dashboardStats.ordersGrowth}%
-              </Badge>
-            </div>
-            <p className="text-2xl font-bold text-card-foreground">{dashboardStats.totalOrders.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">إجمالي الطلبات</p>
-          </div>
+       {/* Stats Grid */}
+<div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  {/* إجمالي الطلبات - عند الضغط يفتح تبويب الطلبات */}
+  <div 
+    className="bg-card rounded-2xl border border-border p-6 cursor-pointer hover:border-primary transition-all"
+    onClick={() => {
+      // كود لجعل التبويب النشط هو الطلبات
+      const tabsList = document.querySelectorAll('[role="tab"]');
+      (tabsList[1] as HTMLElement)?.click(); 
+    }}
+  >
+    <div className="flex items-center justify-between mb-4">
+      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+        <Package className="w-6 h-6 text-primary" />
+      </div>
+      <Badge className="bg-green-500/10 text-green-600 border-0">حقيقي</Badge>
+    </div>
+    <p className="text-2xl font-bold text-card-foreground">{realOrders.length}</p>
+    <p className="text-sm text-muted-foreground">إجمالي الطلبات المستلمة</p>
+  </div>
 
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-accent" />
-              </div>
-              <Badge className="bg-green-500/10 text-green-600 border-0">
-                +{dashboardStats.revenueGrowth}%
-              </Badge>
-            </div>
-            <p className="text-2xl font-bold text-card-foreground">{dashboardStats.totalRevenue.toLocaleString()} ج.م</p>
-            <p className="text-sm text-muted-foreground">إجمالي الإيرادات</p>
-          </div>
+  {/* إجمالي الإيرادات - يحسب مجموع الطلبات الحقيقية */}
+  <div className="bg-card rounded-2xl border border-border p-6">
+    <div className="flex items-center justify-between mb-4">
+      <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+        <TrendingUp className="w-6 h-6 text-accent" />
+      </div>
+    </div>
+    <p className="text-2xl font-bold text-card-foreground">
+      {realOrders.reduce((sum, order) => sum + (Number(order.total) || 0), 0).toLocaleString()} ج.م
+    </p>
+    <p className="text-sm text-muted-foreground">إجمالي مبيعات الموقع</p>
+  </div>
 
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
-                <Store className="w-6 h-6 text-orange-500" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-card-foreground">{dashboardStats.totalRestaurants}</p>
-            <p className="text-sm text-muted-foreground">المطاعم المسجلة</p>
-          </div>
+  {/* المطاعم المسجلة */}
+  <div className="bg-card rounded-2xl border border-border p-6 cursor-pointer hover:border-orange-500 transition-all"
+       onClick={() => (document.querySelectorAll('[role="tab"]')[0] as HTMLElement)?.click()}>
+    <div className="flex items-center justify-between mb-4">
+      <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
+        <Store className="w-6 h-6 text-orange-500" />
+      </div>
+    </div>
+    <p className="text-2xl font-bold text-card-foreground">{restaurants.length}</p>
+    <p className="text-sm text-muted-foreground">المطاعم النشطة</p>
+  </div>
 
-          <div className="bg-card rounded-2xl border border-border p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                <Users className="w-6 h-6 text-blue-500" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-card-foreground">{dashboardStats.totalCustomers.toLocaleString()}</p>
-            <p className="text-sm text-muted-foreground">العملاء المسجلين</p>
-          </div>
-        </div>
+  {/* نقاط الولاء الموزعة (مثال) */}
+  <div className="bg-card rounded-2xl border border-border p-6">
+    <div className="flex items-center justify-between mb-4">
+      <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
+        <Users className="w-6 h-6 text-blue-500" />
+      </div>
+    </div>
+    <p className="text-2xl font-bold text-card-foreground">{realOrders.length * 10}</p>
+    <p className="text-sm text-muted-foreground">إجمالي نقاط العملاء</p>
+  </div>
+</div>
 
         {/* Content Tabs */}
         <Tabs defaultValue="restaurants" className="space-y-6">
@@ -1028,9 +1039,9 @@ const handleAdminLogin = () => {
           <TabsContent value="restaurants" className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold">إدارة المطاعم</h2>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                إضافة مطعم
+              <Button className="gap-2" onClick={() => setShowAddRestaurant(true)}>
+                 <Plus className="w-4 h-4" />
+                  إضافة مطعم جديد
               </Button>
             </div>
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -1520,6 +1531,33 @@ const handleAdminLogin = () => {
       {activeView === "admin" && <AdminDashboard />}
       <CartDrawer />
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <Dialog open={showAddRestaurant} onOpenChange={setShowAddRestaurant}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>إضافة مطعم جديد للمنصة</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">اسم المطعم</label>
+              <Input placeholder="مثلاً: حضرموت" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">نوع المطبخ</label>
+              <Input placeholder="مثلاً: مشويات، إيطالي.." />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">رابط صورة الغلاف</label>
+              <Input placeholder="انسخ رابط صورة من جوجل" />
+            </div>
+            <Button className="w-full mt-4" onClick={() => {
+              alert("تم الحفظ (سيتم الربط بالفايربيس قريباً)");
+              setShowAddRestaurant(false);
+            }}>
+              حفظ المطعم في القائمة
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
   <DialogContent className="sm:max-w-[400px]">
     <DialogHeader>
       <DialogTitle className="text-center">دخول الإدارة</DialogTitle>
