@@ -434,16 +434,25 @@ const handleCheckout = async () => {
   }
 };
 
-// فلترة المطاعم بناءً على البحث والمحافظة
-const displayRestaurants = allRestaurants.filter(r => 
-  (r.name.includes(searchQuery) || r.cuisine.includes(searchQuery)) &&
-  (selectedGovernorate === "الكل" || r.address.includes(selectedGovernorate))
-);
+// كود فلترة المطاعم الآمن (يمنع حدوث الـ Error اللي ظهرلك)
+const displayRestaurants = allRestaurants.filter((r) => {
+  // بنتأكد إن البيانات موجودة فعلاً قبل ما نبحث فيها، ولو مش موجودة بنعتبرها نص فارغ ""
+  const name = r.name || "";
+  const cuisine = r.cuisine || "";
+  const address = r.address || "";
+  const query = searchQuery || "";
 
-// فلترة الأصناف داخل المطعم بناءً على القسم
-const displayMenuItems = menuItems.filter(item => 
-  selectedCategory === "الكل" || item.category === selectedCategory
-);
+  const matchesSearch = name.includes(query) || cuisine.includes(query);
+  const matchesGov = selectedGovernorate === "الكل" || address.includes(selectedGovernorate);
+
+  return matchesSearch && matchesGov;
+});
+
+// ونفس الكلام لفلترة الأصناف
+const displayMenuItems = menuItems.filter((item) => {
+  const category = item.category || "";
+  return selectedCategory === "الكل" || category === selectedCategory;
+});
 
 const deleteRestaurant = async (resId: string) => {
   if(confirm("هل أنت متأكد من حذف هذا المطعم؟")) {
@@ -602,9 +611,9 @@ const handleAdminLogin = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="max-h-64 overflow-auto">
-                {governorates.map((gov) => (
-                  <DropdownMenuItem key={gov} onClick={() => setSelectedGovernorate(gov)}>
-                    {gov}
+                {governorates.map((الجيزة) => (
+                  <DropdownMenuItem key={الجيزة} onClick={() => setSelectedGovernorate(الجيزة)}>
+                    {الجيزة}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
@@ -692,9 +701,9 @@ const handleAdminLogin = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-full max-h-64 overflow-auto">
-                {governorates.map((gov) => (
-                  <DropdownMenuItem key={gov} onClick={() => setSelectedGovernorate(gov)}>
-                    {gov}
+                {governorates.map((الجيزة) => (
+                  <DropdownMenuItem key={الجيزة} onClick={() => setSelectedGovernorate(الجيزة)}>
+                    {الجيزة}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
