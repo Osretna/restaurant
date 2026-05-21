@@ -347,6 +347,8 @@ const dashboardStats = {
 
 
 export default function FoodiePlatform() {
+  const [newRestData, setNewRestData] = useState({ name: "", cuisine: "", cover: "" });
+  const [allRestaurants, setAllRestaurants] = useState<Restaurant[]>(restaurants); // سنبدأ بالبيانات القديمة ونضيف عليها
   const [showAddRestaurant, setShowAddRestaurant] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -384,20 +386,17 @@ export default function FoodiePlatform() {
   
   // استبدل الـ useEffect القديم أو أضف هذا بجانبه
 useEffect(() => {
-  // سحب الطلبات الحقيقية
-  const ordersRef = ref(db, 'orders');
-  onValue(ordersRef, (snapshot) => {
+  // سحب المطاعم من Firebase
+  const restRef = ref(db, 'restaurants');
+  onValue(restRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
-      // تحويل الكائن (Object) إلى مصفوفة (Array) لعرضها
-      const ordersList = Object.keys(data).map(key => ({
-        id: key,
-        ...data[key]
-      }));
-      setRealOrders(ordersList.reverse()); // الأحدث فوق
+      const list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+      // دمج المطاعم الافتراضية مع المطاعم الجديدة من الفايربيس
+      setAllRestaurants([...restaurants, ...list]);
     }
   });
-}, []);
+  }, []);
 
 // دالة لحفظ الطلب الجديد في Firebase
 const handleCheckout = async () => {
@@ -435,6 +434,35 @@ const handleAdminLogin = () => {
       alert("بيانات الدخول غير صحيحة!");
     }
   };
+  const handleAddRestaurant = async () => {
+  if (!newRestData.name || !newRestData.cuisine) {
+    alert("يرجى ملء اسم المطعم ونوعه");
+    return;
+  }
+
+  const restaurantToSave = {
+    ...newRestData,
+    logo: "🏪", // أيقونة افتراضية
+    rating: 5.0,
+    reviews: 0,
+    deliveryTime: "30-40",
+    deliveryFee: 10,
+    minOrder: 50,
+    isOpen: true,
+    address: "عنوان جديد",
+    phone: "0123456789"
+  };
+
+  try {
+    const restRef = ref(db, 'restaurants');
+    await push(restRef, restaurantToSave);
+    alert("تم حفظ المطعم بنجاح في Firebase!");
+    setNewRestData({ name: "", cuisine: "", cover: "" }); // تصفير الخانات
+    setShowAddRestaurant(false); // قفل النافذة
+  } catch (error) {
+    alert("حدث خطأ أثناء الحفظ");
+  }
+};
 
   const toggleDarkMode = () => {
     setIsDark(!isDark)
@@ -1532,32 +1560,41 @@ const handleAdminLogin = () => {
       <CartDrawer />
       <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
         <Dialog open={showAddRestaurant} onOpenChange={setShowAddRestaurant}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>إضافة مطعم جديد للمنصة</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">اسم المطعم</label>
-              <Input placeholder="مثلاً: حضرموت" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">نوع المطبخ</label>
-              <Input placeholder="مثلاً: مشويات، إيطالي.." />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">رابط صورة الغلاف</label>
-              <Input placeholder="انسخ رابط صورة من جوجل" />
-            </div>
-            <Button className="w-full mt-4" onClick={() => {
-              alert("تم الحفظ (سيتم الربط بالفايربيس قريباً)");
-              setShowAddRestaurant(false);
-            }}>
-              حفظ المطعم في القائمة
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+  <DialogContent className="sm:max-w-[500px]">
+    <DialogHeader>
+      <DialogTitle>إضافة مطعم جديد للمنصة</DialogTitle>
+    </DialogHeader>
+    <div className="space-y-4 py-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">اسم المطعم</label>
+        <Input 
+          placeholder="مثلاً: مطعم السعادة" 
+          value={newRestData.name}
+          onChange={(e) => setNewRestData({...newRestData, name: e.target.value})}
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">نوع المطبخ</label>
+        <Input 
+          placeholder="مثلاً: مشويات" 
+          value={newRestData.cuisine}
+          onChange={(e) => setNewRestData({...newRestData, cuisine: e.target.value})}
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">رابط صورة الغلاف</label>
+        <Input 
+          placeholder="ضع رابط صورة من الإنترنت" 
+          value={newRestData.cover}
+          onChange={(e) => setNewRestData({...newRestData, cover: e.target.value})}
+        />
+      </div>
+      <Button className="w-full mt-4" onClick={handleAddRestaurant}>
+        حفظ المطعم الآن
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
   <DialogContent className="sm:max-w-[400px]">
     <DialogHeader>
       <DialogTitle className="text-center">دخول الإدارة</DialogTitle>
