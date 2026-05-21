@@ -396,17 +396,23 @@ export default function FoodiePlatform() {
   
   // استبدل الـ useEffect القديم أو أضف هذا بجانبه
 useEffect(() => {
-  // سحب المطاعم من Firebase
+  // سحب المطاعم من Firebase بشكل لحظي
   const restRef = ref(db, 'restaurants');
   onValue(restRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
-      const list = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-      // دمج المطاعم الافتراضية مع المطاعم الجديدة من الفايربيس
-      setAllRestaurants([...restaurants, ...list]);
+      // تحويل البيانات من Firebase لمصفوفة
+      const firebaseList = Object.keys(data).map(key => ({ 
+        id: key, 
+        ...data[key] 
+      }));
+      // دمج المطاعم الافتراضية مع مطاعم الفايربيس
+      setAllRestaurants([...restaurants, ...firebaseList]);
+    } else {
+      setAllRestaurants(restaurants);
     }
   });
-  }, []);
+}, []);
 
 // دالة لحفظ الطلب الجديد في Firebase
 const handleCheckout = async () => {
@@ -477,6 +483,7 @@ const handleAdminLogin = () => {
     return;
   }
 
+
   const restaurantToSave = {
     ...newRestData,
     logo: "🏪", // أيقونة افتراضية
@@ -500,6 +507,19 @@ const handleAdminLogin = () => {
     alert("حدث خطأ أثناء الحفظ");
   }
 };
+
+ // --- ضيف الدالة الجديدة هنا بالظبط ---
+  const toggleRestaurantStatus = async (resId: any, currentStatus: boolean) => {
+    try {
+      // بنروح للمسار بتاع المطعم ده في الفايربيس ونغير حالة isOpen
+      const restStatusRef = ref(db, `restaurants/${resId}/isOpen`);
+      await set(restStatusRef, !currentStatus);
+      alert("تم تحديث حالة المطعم بنجاح! ✅");
+    } catch (error) {
+      console.error(error);
+      alert("حدث خطأ! تأكد أن هذا المطعم مضاف من لوحة التحكم وليس من البيانات الافتراضية.");
+    }
+  };
 
   const toggleDarkMode = () => {
     setIsDark(!isDark)
@@ -1156,10 +1176,17 @@ const handleAdminLogin = () => {
                           </div>
                         </td>
                         <td className="p-4">
-                          <Badge variant={restaurant.isOpen ? "default" : "secondary"}>
-                            {restaurant.isOpen ? "مفتوح" : "مغلق"}
-                          </Badge>
-                        </td>
+  <Button 
+    variant={restaurant.isOpen ? "default" : "secondary"}
+    size="sm"
+    className={restaurant.isOpen 
+      ? "bg-green-600 hover:bg-green-700 text-white min-w-[100px]" 
+      : "bg-red-500 hover:bg-red-600 text-white min-w-[100px]"}
+    onClick={() => toggleRestaurantStatus(restaurant.id, restaurant.isOpen)}
+  >
+    {restaurant.isOpen ? "مفتوح الآن" : "مغلق مؤقتاً"}
+  </Button>
+</td>
                         <td className="p-4">
                           <div className="flex items-center gap-2">
                             <Button variant="ghost" size="icon">
@@ -1357,10 +1384,10 @@ const handleAdminLogin = () => {
 </Button>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRestaurants.map((restaurant) => (
-              <RestaurantCard key={restaurant.id} restaurant={restaurant} />
-            ))}
-          </div>
+  {displayRestaurants.map((restaurant) => (
+    <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+  ))}
+</div>
         </div>
       </section>
 
