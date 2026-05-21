@@ -1,5 +1,7 @@
 "use client"
 
+import { db } from "@/lib/firebase"
+import { ref, onValue, push, set } from "firebase/database"
 import { useState, useEffect } from "react"
 import {
   Search,
@@ -373,11 +375,44 @@ export default function FoodiePlatform() {
   ])
   const [loyaltyPoints, setLoyaltyPoints] = useState(250)
 
-  useEffect(() => {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-    setIsDark(prefersDark)
-    document.documentElement.classList.toggle("dark", prefersDark)
-  }, [])
+  // استبدل الـ useEffect القديم أو أضف هذا بجانبه
+useEffect(() => {
+  // سحب المطاعم من Firebase
+  const restaurantsRef = ref(db, 'restaurants');
+  onValue(restaurantsRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      // هنا ممكن نحدث الـ state لو عملنا state للمطاعم
+      // لسهولة التجربة حالياً هنستخدم البيانات اللي فوق، لكن دي الطريقة لسحبها
+    }
+  });
+}, []);
+
+// دالة لحفظ الطلب الجديد في Firebase
+const handleCheckout = async () => {
+  if (cart.length === 0) return;
+
+  const newOrder = {
+    items: cart,
+    total: cartTotal + 10,
+    status: "pending",
+    date: new Date().toISOString(),
+    customerName: "عميل تجريبي", // ممكن نغيرها بعدين لما نعمل Login
+  };
+
+  try {
+    const ordersRef = ref(db, 'orders');
+    const newOrderRef = push(ordersRef);
+    await set(newOrderRef, newOrder);
+    
+    alert("تم إرسال طلبك بنجاح وحفظه في Firebase!");
+    setCart([]);
+    setIsCartOpen(false);
+  } catch (error) {
+    console.error("Error saving order:", error);
+    alert("حدث خطأ أثناء حفظ الطلب.");
+  }
+};
 
   const toggleDarkMode = () => {
     setIsDark(!isDark)
@@ -1166,10 +1201,10 @@ export default function FoodiePlatform() {
               </div>
             </div>
 
-            <Button className="w-full gap-2" size="lg">
-              <CreditCard className="w-5 h-5" />
-              إتمام الطلب
-            </Button>
+            <Button className="w-full gap-2" size="lg" onClick={handleCheckout}>
+  <CreditCard className="w-5 h-5" />
+  إتمام الطلب وحفظه أونلاين
+</Button>
           </>
         ) : (
           <div className="py-12 text-center">
