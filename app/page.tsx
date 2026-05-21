@@ -344,7 +344,13 @@ const dashboardStats = {
   ],
 }
 
+
+
 export default function FoodiePlatform() {
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [loginData, setLoginData] = useState({ username: "", password: "" });
+  const [realOrders, setRealOrders] = useState<any[]>([]); // لحفظ الطلبات من فيرباس
   const [isDark, setIsDark] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [activeView, setActiveView] = useState<"home" | "restaurant" | "admin" | "profile">("home")
@@ -374,16 +380,20 @@ export default function FoodiePlatform() {
     },
   ])
   const [loyaltyPoints, setLoyaltyPoints] = useState(250)
-
+  
   // استبدل الـ useEffect القديم أو أضف هذا بجانبه
 useEffect(() => {
-  // سحب المطاعم من Firebase
-  const restaurantsRef = ref(db, 'restaurants');
-  onValue(restaurantsRef, (snapshot) => {
+  // سحب الطلبات الحقيقية
+  const ordersRef = ref(db, 'orders');
+  onValue(ordersRef, (snapshot) => {
     const data = snapshot.val();
     if (data) {
-      // هنا ممكن نحدث الـ state لو عملنا state للمطاعم
-      // لسهولة التجربة حالياً هنستخدم البيانات اللي فوق، لكن دي الطريقة لسحبها
+      // تحويل الكائن (Object) إلى مصفوفة (Array) لعرضها
+      const ordersList = Object.keys(data).map(key => ({
+        id: key,
+        ...data[key]
+      }));
+      setRealOrders(ordersList.reverse()); // الأحدث فوق
     }
   });
 }, []);
@@ -413,6 +423,17 @@ const handleCheckout = async () => {
     alert("حدث خطأ أثناء حفظ الطلب.");
   }
 };
+
+const handleAdminLogin = () => {
+    if (loginData.username === "admin" && loginData.password === "admin1234") {
+      setIsAdminLoggedIn(true);
+      setShowLoginDialog(false);
+      setActiveView("admin");
+      setUserRole("admin");
+    } else {
+      alert("بيانات الدخول غير صحيحة!");
+    }
+  };
 
   const toggleDarkMode = () => {
     setIsDark(!isDark)
@@ -555,13 +576,17 @@ const handleCheckout = async () => {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => {
-                    setUserRole("admin")
-                    setActiveView("admin")
+                  if (!isAdminLoggedIn) {
+                     setShowLoginDialog(true); // يفتح شاشة الدخول لو مش مسجل
+                  } else {
+                     setActiveView("admin");
+                     setUserRole("admin");
+                   }
                   }}
-                >
+                  >
                   <BarChart3 className="w-4 h-4 ml-2" />
-                  أدمن
-                </DropdownMenuItem>
+                   أدمن
+                  </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -1494,6 +1519,38 @@ const handleCheckout = async () => {
       {activeView === "restaurant" && <RestaurantPage />}
       {activeView === "admin" && <AdminDashboard />}
       <CartDrawer />
+      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+  <DialogContent className="sm:max-w-[400px]">
+    <DialogHeader>
+      <DialogTitle className="text-center">دخول الإدارة</DialogTitle>
+      <DialogDescription className="text-center">
+        أدخل البيانات للتحكم في المطعم والطلبات
+      </DialogDescription>
+    </DialogHeader>
+    <div className="space-y-4 py-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">اسم المستخدم</label>
+        <Input 
+          placeholder="admin" 
+          value={loginData.username}
+          onChange={(e) => setLoginData({...loginData, username: e.target.value})}
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">كلمة المرور</label>
+        <Input 
+          type="password" 
+          placeholder="••••••••" 
+          value={loginData.password}
+          onChange={(e) => setLoginData({...loginData, password: e.target.value})}
+        />
+      </div>
+      <Button className="w-full mt-4" onClick={handleAdminLogin}>
+        تسجيل الدخول
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
     </div>
   )
 }
